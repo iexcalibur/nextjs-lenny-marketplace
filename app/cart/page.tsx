@@ -11,6 +11,7 @@ import { api } from '../lib/api';
 export default function CartPage() {
   const { 
     cartItems, 
+    promoCode,
     promoInput, 
     promoError,
     totals: rawTotals,
@@ -26,10 +27,21 @@ export default function CartPage() {
 
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
 
+  // Group cart items by product_id and sum their quantities
+  const consolidatedCartItems = cartItems.reduce((acc, item) => {
+    const existingItem = acc.find(i => i.product_id === item.product_id);
+    if (existingItem) {
+      existingItem.quantity += item.quantity;
+    } else {
+      acc.push({ ...item });
+    }
+    return acc;
+  }, [] as typeof cartItems);
+
   const totals = {
-    subtotal: parseFloat(rawTotals.subtotal),
-    discount: parseFloat(rawTotals.discount),
-    total: parseFloat(rawTotals.total)
+    subtotal: rawTotals.subtotal.toString(),
+    discount: rawTotals.discount.toString(),
+    total: rawTotals.total.toString()
   };
 
   useEffect(() => {
@@ -56,14 +68,14 @@ export default function CartPage() {
       </div>
       <div className="w-full px-4 sm:px-6 md:px-8 lg:px-32 py-4 sm:py-6 md:py-8">
         <div className="space-y-4 sm:space-y-6 md:space-y-8">
-          {cartItems.length > 0 ? (
+          {consolidatedCartItems.length > 0 ? (
             <div className="relative -mt-[50px] sm:-mt-[75px] md:-mt-[100px]">
               <div className="max-w-[1200px] mx-auto">
                 <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 justify-center">
                   <div className="w-full lg:w-[65%] space-y-4 bg-white p-4 sm:p-6 md:p-8 rounded-lg relative border-[0.5px] border-gray-200">
-                    {cartItems.map((item, index) => (
+                    {consolidatedCartItems.map((item) => (
                       <CartItem
-                        key={`${item.product_id}-${index}`}
+                        key={item.product_id}
                         item={item}
                         onQuantityChange={handleQuantityChange}
                         onRemove={handleRemove}
@@ -72,6 +84,7 @@ export default function CartPage() {
                   </div>
                   <div className="w-full lg:w-[35%] lg:max-w-[400px]">
                     <ProductSummaryCard
+                      promoCode={promoCode}
                       promoInput={promoInput}
                       promoError={promoError}
                       totals={totals}

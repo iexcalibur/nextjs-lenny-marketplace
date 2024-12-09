@@ -49,6 +49,16 @@ export default function ProfilePage() {
   }, []);
 
   const calculateSummary = () => {
+    // Return default values if orders array is empty
+    if (!orders || orders.length === 0) {
+      return {
+        totalItems: 0,
+        totalPurchase: 0,
+        discountCodes: [],
+        totalDiscount: 0
+      };
+    }
+
     const totalItems = orders.reduce((sum, order) => 
       sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
     );

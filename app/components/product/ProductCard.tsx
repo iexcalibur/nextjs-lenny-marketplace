@@ -30,6 +30,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           text={isLoading ? 'Adding...' : 'Add to Cart'}
           onClick={handleAddToCart}
           className="w-full"
+       
         />
       </div>
     </div>

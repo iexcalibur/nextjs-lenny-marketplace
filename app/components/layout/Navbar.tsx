@@ -14,8 +14,7 @@ export default function Navbar() {
     const fetchCartCount = async () => {
       try {
         const cart = await api.getCart("user123");
-        const count = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-        setCartCount(count);
+        setCartCount(cart.items.length);
       } catch (error) {
         console.error('Failed to fetch cart count:', error);
         setCartCount(0);

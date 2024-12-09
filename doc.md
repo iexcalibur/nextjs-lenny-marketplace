@@ -547,3 +547,405 @@ describe('Cart Flow', () => {
 });
 ```
 
+## Feature Implementation Details
+
+### Cart System
+The cart system implements several key features:
+
+1. **Unique Product Handling**:
+```typescript
+// In useProductCard hook
+const handleAddToCart = async () => {
+  const cart = await api.getCart("user123");
+  const existingItem = cart.items.find(
+    item => String(item.product_id) === String(product.id)
+  );
+
+  if (existingItem) {
+    // Update quantity of existing item
+    await api.updateCartItem(String(product.id), {
+      userId: "user123",
+      quantity: existingItem.quantity + 1
+    });
+  } else {
+    // Add new unique item
+    await api.addToCart({
+      userId: "user123",
+      productId: String(product.id),
+      quantity: 1,
+      price: product.price,
+      name: product.name,
+      imageUrl: product.imageUrl || ''
+    });
+  }
+};
+```
+
+Key features:
+- Maintains unique products in cart
+- Updates quantities for existing items
+- Preserves product details across updates
+
+2. **Cart Badge System**:
+```typescript
+// In Navbar component
+const fetchCartCount = async () => {
+  const cart = await api.getCart("user123");
+  // Shows number of unique products, not total quantity
+  setCartCount(cart.items.length);
+};
+```
+
+3. **Cart Item Consolidation**:
+```typescript
+// In CartPage component
+const consolidatedCartItems = cartItems.reduce((acc, item) => {
+  const existingItem = acc.find(i => i.product_id === item.product_id);
+  if (existingItem) {
+    existingItem.quantity += item.quantity;
+  } else {
+    acc.push({ ...item });
+  }
+  return acc;
+}, [] as typeof cartItems);
+```
+
+### Product Management System
+
+1. **Product Display**:
+```typescript
+const ProductCard = ({ product }: ProductCardProps) => {
+  const { isLoading, handleAddToCart } = useProductCard(product);
+
+  return (
+    <div className="bg-white rounded-lg overflow-hidden">
+      <Image
+        src={product.imageUrl}
+        alt={product.name}
+        fill
+        className="object-contain"
+      />
+      <div className="p-4">
+        <h3>{product.name}</h3>
+        <p>${product.price}</p>
+        <Button
+          text={isLoading ? 'Adding...' : 'Add to Cart'}
+          onClick={handleAddToCart}
+        />
+      </div>
+    </div>
+  );
+};
+```
+
+2. **Product Grid Layout**:
+```typescript
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {products.map((product) => (
+    <ProductCard key={product.id} product={product} />
+  ))}
+</div>
+```
+
+### Profile System
+The profile system tracks user activity and orders:
+
+1. **Order Summary**:
+```typescript
+const calculateSummary = () => {
+  if (!orders || orders.length === 0) {
+    return {
+      totalItems: 0,
+      totalPurchase: 0,
+      discountCodes: [],
+      totalDiscount: 0
+    };
+  }
+
+  const totalItems = orders.reduce((sum, order) => 
+    sum + order.items.reduce((itemSum, item) => 
+      itemSum + item.quantity, 0
+    ), 0
+  );
+
+  // Other calculations...
+};
+```
+
+2. **Account Summary Display**:
+```typescript
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {/* Total Items */}
+  <div className="bg-gray-50 p-4 rounded-lg">
+    <h3>Total Items Purchased</h3>
+    <p>{summary.totalItems || 0}</p>
+  </div>
+  
+  {/* Other summary cards */}
+</div>
+```
+
+### Promo Code System
+The promo code system uses a state machine approach:
+
+```typescript
+type PromoState = 'idle' | 'validating' | 'applied' | 'error';
+
+interface PromoSystem {
+  state: PromoState;
+  code: string | null;
+  discount: number;
+  error: string | null;
+}
+
+// State transitions
+const promoReducer = (state: PromoSystem, action: PromoAction): PromoSystem => {
+  switch (action.type) {
+    case 'VALIDATE':
+      return { ...state, state: 'validating' };
+    case 'APPLY':
+      return { 
+        state: 'applied',
+        code: action.payload.code,
+        discount: action.payload.discount,
+        error: null
+      };
+    // Other cases...
+  }
+};
+```
+
+### Responsive Design System
+The application implements a mobile-first approach:
+
+```typescript
+// Base breakpoint system
+const breakpoints = {
+  sm: '640px',   // Small devices
+  md: '768px',   // Medium devices
+  lg: '1024px',  // Large devices
+  xl: '1280px'   // Extra large devices
+};
+
+// Example responsive component
+<div className="
+  grid
+  grid-cols-1 
+  sm:grid-cols-2 
+  lg:grid-cols-4 
+  gap-4 
+  sm:gap-6 
+  place-items-center
+">
+```
+
+## Technical Implementation Details
+
+### Component Architecture Decisions
+
+1. **Cart System Implementation**
+```typescript
+// Unique product handling with optimistic updates
+const handleAddToCart = async (product) => {
+  // Optimistic update
+  setCartItems(prev => [...prev, product]);
+  
+  try {
+    // Backend validation and update
+    await api.addToCart(product);
+  } catch (error) {
+    // Rollback on failure
+    setCartItems(prev => prev.filter(item => item.id !== product.id));
+    handleError(error);
+  }
+};
+```
+
+2. **State Management Choices**
+- Used React's Context API for global state
+- Implemented custom hooks for business logic
+- Maintained component-level state for UI
+
+3. **Type Safety Implementation**
+```typescript
+// Strong typing for all interfaces
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+}
+
+interface CartItem extends Product {
+  quantity: number;
+}
+```
+
+### Performance Optimizations
+
+1. **Image Loading**
+- Implemented lazy loading
+- Used Next.js Image optimization
+- Added blur placeholders
+
+2. **Code Splitting**
+```typescript
+// Dynamic imports for route-based code splitting
+const ProductGrid = dynamic(() => import('./ProductGrid'), {
+  loading: () => <Skeleton />,
+  ssr: true
+});
+```
+
+3. **Memoization**
+```typescript
+// Preventing unnecessary re-renders
+const MemoizedProductCard = memo(ProductCard, (prev, next) => {
+  return prev.id === next.id && prev.price === next.price;
+});
+```
+
+### API Integration
+
+1. **Error Handling**
+```typescript
+const api = {
+  async getProducts() {
+    try {
+      const response = await fetch('/api/products');
+      if (!response.ok) {
+        throw new APIError(response.statusText);
+      }
+      return response.json();
+    } catch (error) {
+      handleAPIError(error);
+    }
+  }
+};
+```
+
+2. **Data Fetching Strategy**
+- Used SSR for initial page load
+- Implemented client-side fetching for dynamic updates
+- Added proper error boundaries
+
+### Testing Strategy
+
+1. **Unit Tests**
+```typescript
+describe('ProductCard', () => {
+  it('handles add to cart', async () => {
+    const { getByRole } = render(<ProductCard />);
+    await userEvent.click(getByRole('button'));
+    expect(mockAddToCart).toHaveBeenCalled();
+  });
+});
+```
+
+2. **Integration Tests**
+- Cart flow testing
+- Checkout process
+- Error scenarios
+
+### Responsive Design Implementation
+
+1. **Mobile-First Approach**
+```typescript
+// Tailwind classes showing mobile-first design
+<div className="
+  w-full                // Base mobile style
+  sm:w-1/2             // Tablet breakpoint
+  lg:w-1/4             // Desktop breakpoint
+  p-4                  // Base padding
+  sm:p-6               // Larger padding on tablet
+  lg:p-8               // Even larger on desktop
+">
+```
+
+2. **Breakpoint Strategy**
+- Mobile: < 640px
+- Tablet: 640px - 1024px
+- Desktop: > 1024px
+
+### Project Structure
+```
+frontend/
+├── app/
+│   ├── components/    # Reusable UI components
+│   │   ├── cart/     # Cart-related components
+│   │   ├── product/  # Product-related components
+│   │   └── ui/       # Generic UI components
+│   ├── lib/          # Utilities and API
+│   ├── types/        # TypeScript definitions
+│   └── hooks/        # Custom React hooks
+```
+
+### Key Technical Decisions
+
+1. **Next.js App Router**
+- Better SEO optimization
+- Improved performance
+- Server-side rendering capabilities
+
+2. **TypeScript**
+- Type safety
+- Better developer experience
+- Reduced runtime errors
+
+3. **Tailwind CSS**
+- Rapid development
+- Consistent styling
+- Better performance
+
+4. **Custom Hooks**
+- Reusable business logic
+- Better separation of concerns
+- Easier testing
+
+### Challenges and Solutions
+
+1. **Cart State Management**
+- Challenge: Maintaining consistent cart state
+- Solution: Implemented optimistic updates with rollback
+
+2. **Performance**
+- Challenge: Large product lists
+- Solution: Implemented virtualization and pagination
+
+3. **Type Safety**
+- Challenge: Complex nested types
+- Solution: Created comprehensive type definitions
+
+### Future Improvements
+
+1. **Technical Enhancements**
+- Add Redux for complex state
+- Implement WebSocket for real-time updates
+- Add service worker for offline support
+
+2. **Performance Optimizations**
+- Implement infinite scrolling
+- Add request caching
+- Optimize bundle size
+
+3. **Testing**
+- Add E2E tests with Cypress
+- Improve test coverage
+- Add performance testing
+
+### Development Decisions Log
+
+1. **State Management**
+- Chose Context over Redux for simplicity
+- Implemented custom hooks for reusability
+
+2. **API Design**
+- Created centralized API client
+- Added proper error handling
+- Implemented request caching
+
+3. **Component Design**
+- Used atomic design principles
+- Implemented proper prop typing
+- Added proper error boundaries
+
