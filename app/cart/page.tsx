@@ -38,11 +38,19 @@ export default function CartPage() {
     return acc;
   }, [] as typeof cartItems);
 
-  const totals = {
-    subtotal: rawTotals.subtotal.toString(),
-    discount: rawTotals.discount.toString(),
-    total: rawTotals.total.toString()
+  const calculateTotals = (subtotal: number) => {
+    // Only apply discount if promo is applied
+    const discountAmount = isPromoApplied ? subtotal * 0.10 : 0;
+    const total = subtotal - discountAmount;
+    
+    return {
+      subtotal: subtotal.toFixed(2),
+      discount: discountAmount.toFixed(2),
+      total: total.toFixed(2)
+    };
   };
+
+  const totals = calculateTotals(parseFloat(rawTotals.subtotal));
 
   useEffect(() => {
     const fetchTrendingProducts = async () => {
