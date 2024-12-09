@@ -152,7 +152,7 @@ export const api = {
       if (!res.ok) throw new Error('Failed to fetch active promo');
       return res.json();
     } catch (error) {
-      console.error('Error fetching active promo:', error);
+      console.log('Error fetching active promo:', error);
       throw error;
     }
   },

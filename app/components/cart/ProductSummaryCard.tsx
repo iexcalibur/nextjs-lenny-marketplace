@@ -1,9 +1,10 @@
 import Button from '../ui/Button';
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 interface ProductSummaryCardProps {
   promoCode: string;
   promoInput: string;
-  promoError: string;
+  promoError: string | null;
   totals: {
     subtotal: string;
     discount: string;
@@ -13,7 +14,8 @@ interface ProductSummaryCardProps {
   onApplyPromo: () => void;
   onCheckout: () => void;
   isPromoApplied: boolean;
-  appliedPromoCode: string;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  appliedPromoCode: string | null;
   onClearPromo: () => void;
 }
 

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/app/lib/api';
+import { Product } from '../types';
 
-export interface Product {
+interface APIProduct {
   id: string;
   name: string;
   price: number;
-  imageUrl: string;
+  image_url: string;
   description: string;
   rating?: number;
   sold?: number;
@@ -25,7 +26,7 @@ export function useProducts() {
   const fetchProducts = async () => {
     try {
       const data = await api.getProducts();
-      const transformedProducts = data.map((product: any) => ({
+      const transformedProducts = data.map((product: APIProduct) => ({
         ...product,
         imageUrl: product.image_url,
       }));

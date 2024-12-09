@@ -41,7 +41,7 @@ export const useCart = () => {
       const promo = await api.getActivePromo();
       setPromoCode(promo.code || '');
     } catch (error) {
-      console.error('Failed to fetch promo:', error);
+      console.log('Failed to fetch promo:', error);
       setPromoCode('');
     }
   };

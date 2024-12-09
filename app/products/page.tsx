@@ -2,12 +2,26 @@
 import Button from '../components/ui/Button';
 import { useProducts } from './index';
 import ProductCard from '@/app/components/product/ProductCard';
+import { ServerCrash } from 'lucide-react';
 
 export default function ProductsPage() {
   const { products, loading, error } = useProducts();
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading) return (
+    <div className="flex justify-center items-center py-12">
+      <div className="flex space-x-2">
+        <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+        <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+        <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"></div>
+      </div>
+    </div>
+  );
+  if (error) return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <ServerCrash className="w-16 h-16 text-red-500 mb-4" />
+      <p className="text-gray-600 text-lg">Please connect with a backend</p>
+    </div>
+  );
   if (!products.length) return <div>No products found</div>;
 
   return (
